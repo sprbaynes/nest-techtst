@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException  } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { readFile, writeFile } from 'fs/promises'
@@ -43,7 +43,13 @@ export class ProductsService {
       }
     )
 
-    return product
+    if(product)
+    {
+      return product
+    }
+    else{
+      throw new NotFoundException(`Product with id ${id} not found`)
+    }
   }
 
   async update(id: number, updateProductDto: UpdateProductDto) {  
@@ -60,8 +66,9 @@ export class ProductsService {
       const filePath = join(__dirname, '..', '..','data','products-small.json')
       await writeFile(filePath, JSON.stringify(productsJSON))
     }
-
-    //handle not found
+    else{
+      throw new NotFoundException(`Product with id ${id} not found`)
+    }
 
     return {id, message: `Product ${id} updated`}
   }
@@ -76,8 +83,10 @@ export class ProductsService {
       const filePath = join(__dirname, '..', '..','data','products-small.json')
       await writeFile(filePath, JSON.stringify(productsJSON))
     }
+    else{
+      throw new NotFoundException(`Product with id ${id} not found`)
+    }
 
-    //handle not found
     return {id, message: `Product ${id} deleted`}
   }
 }
