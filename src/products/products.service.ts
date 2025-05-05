@@ -4,12 +4,16 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { Product } from './entities/product.entity'
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ProductsService {
+
+  constructor(private configService: ConfigService) {}
+
   async create(createProductDto: CreateProductDto) {
 
-    const filePath = join(__dirname, '..', '..','data','products-small.json')
+    const filePath = join(__dirname,this.configService.get<string>('DATA_FILE') || '')
     const productsRaw: Buffer = await readFile(filePath)
     const productsJSON:Product[]  = JSON.parse(productsRaw.toString())
     const productIDs: number[] = productsJSON.map(product => product.id)
@@ -27,7 +31,7 @@ export class ProductsService {
   }
 
   async findAll() {
-    const filePath = join(__dirname, '..', '..','data','products-small.json')
+    const filePath = join(__dirname, this.configService.get<string>('DATA_FILE') || '')
     const productsRaw: Buffer = await readFile(filePath)
     const productsJSON:Product[]  = JSON.parse(productsRaw.toString())
 
@@ -63,7 +67,7 @@ export class ProductsService {
     if(product)
     {
       Object.assign(product, updateProductDto)
-      const filePath = join(__dirname, '..', '..','data','products-small.json')
+      const filePath = join(__dirname, this.configService.get<string>('DATA_FILE') || '')
       await writeFile(filePath, JSON.stringify(productsJSON))
     }
     else{
@@ -80,7 +84,7 @@ export class ProductsService {
     if (idx !== -1) {
       productsJSON.splice(idx, 1);
       //remove object from array
-      const filePath = join(__dirname, '..', '..','data','products-small.json')
+      const filePath = join(__dirname, this.configService.get<string>('DATA_FILE') || '')
       await writeFile(filePath, JSON.stringify(productsJSON))
     }
     else{
