@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsService } from './products.service';
 import { ConfigModule } from '@nestjs/config';
 import { NotFoundException  } from '@nestjs/common';
+import { copyFile} from 'fs/promises'
+import { join } from 'path'
 
 describe('ProductsService', () => {
   let service: ProductsService;
@@ -16,7 +18,19 @@ describe('ProductsService', () => {
     }).compile();
 
     service = module.get<ProductsService>(ProductsService);
+
+    const dataFileBackupPath = join(__dirname, process.env.DATA_FILE_BACKUP || '')
+    const dataFilePath = join(__dirname, process.env.DATA_FILE || '')
+
+    await copyFile(dataFileBackupPath, dataFilePath)
   });
+
+  afterAll(async ()=> {
+    const dataFileBackupPath = join(__dirname, process.env.DATA_FILE_BACKUP || '')
+    const dataFilePath = join(__dirname, process.env.DATA_FILE || '')
+
+    await copyFile(dataFileBackupPath, dataFilePath)
+  })
 
   it('should be defined', () => {
     expect(service).toBeDefined();
