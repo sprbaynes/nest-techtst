@@ -113,7 +113,7 @@ describe('ProductsService', () => {
   })
 
   it('should throw an InternalServerErrorException when creating a new product fails', async ()=>{
-
+    /* For the sake of I'm only going to do this type of test the once */
     const mockError = Object.assign(new Error('EIO: Generic IO Failure'), {
       code: 'EIO',
     });
@@ -142,4 +142,21 @@ describe('ProductsService', () => {
 
     spy.mockRestore();
   })
+
+  it('should update an existing product', async ()=>{
+    let found = await service.findOne(2);
+    
+    await service.update(2, {
+      "brand": "Updated brand"
+    })
+    
+    found = await service.findOne(2)
+
+    expect(found.brand).toEqual("Updated brand")
+
+  })
+
+  it('should throw NotFoundException when you try to update a product that doesn\'t exist', async () => {
+    expect(async ()=> await service.update(1111, {"brand": "Updated brand"})).rejects.toThrow(new NotFoundException(`Product with id 1111 not found`))
+  });
 });
