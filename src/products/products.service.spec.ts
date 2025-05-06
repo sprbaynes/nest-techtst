@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsService } from './products.service';
 import { ConfigModule } from '@nestjs/config';
-import { NotFoundException  } from '@nestjs/common';
+import { NotFoundException, InternalServerErrorException  } from '@nestjs/common';
+import * as fs from 'fs/promises';
 import { copyFile} from 'fs/promises'
 import { join } from 'path'
 
@@ -39,7 +40,6 @@ describe('ProductsService', () => {
   it('should return all products', async () => {
     const products = await service.findAll();
 
-    console.log("products", products)
     expect(Array.isArray(products)).toBe(true);
     expect(products).toHaveLength(3)
   });
@@ -62,7 +62,7 @@ describe('ProductsService', () => {
   });
 
   it('should should throw NotFoundException when product id doesn\'t exist', async () => {
-    expect(()=> service.findOne(1111)).rejects.toThrow(new NotFoundException(`Product with id 1111 not found`))
+    expect(async ()=> await service.findOne(1111)).rejects.toThrow(new NotFoundException(`Product with id 1111 not found`))
   });
 
   it('should remove a product', async () => {
@@ -84,4 +84,62 @@ describe('ProductsService', () => {
     expect(()=> service.findOne(productResponse.id)).rejects.toThrow(new NotFoundException(`Product with id ${productResponse.id} not found`))
   });
 
+  it('should throw NotFoundException when you try to remove a product that doesn\'t exist', async () => {
+    expect(async ()=> await service.remove(1111)).rejects.toThrow(new NotFoundException(`Product with id 1111 not found`))
+  });
+
+  it('should create a new product', async ()=>{
+
+    const productToCreate = {
+      "brand": "Velvet Touch",
+      "category": "beauty",
+      "description": "The Powder Canister is a finely milled setting powder designed to set makeup and control shine. With a lightweight and translucent formula, it provides a smooth and matte finish.",
+      "images": [
+        "https://cdn.dummyjson.com/product-images/beauty/powder-canister/1.webp"
+      ],
+      "price": 14.99,
+      "stock": 89,
+      "thumbnail": "https://cdn.dummyjson.com/product-images/beauty/powder-canister/thumbnail.webp",
+      "title": "Powder Canister"
+    }
+
+    const productResponse = await service.create(productToCreate);
+
+    const result = await service.findOne(productResponse.id);
+    const products = await service.findAll()
+
+    expect(result).toEqual({id: productResponse.id, ...productToCreate})
+    expect(products).toHaveLength(4)
+  })
+
+  it('should throw an InternalServerErrorException when creating a new product fails', async ()=>{
+
+    const mockError = Object.assign(new Error('EIO: Generic IO Failure'), {
+      code: 'EIO',
+    });
+
+    const spy = jest
+    .spyOn(fs, 'writeFile')
+    .mockRejectedValueOnce(mockError);
+
+    const productToCreate = {
+      "brand": "Velvet Touch",
+      "category": "beauty",
+      "description": "The Powder Canister is a finely milled setting powder designed to set makeup and control shine. With a lightweight and translucent formula, it provides a smooth and matte finish.",
+      "images": [
+        "https://cdn.dummyjson.com/product-images/beauty/powder-canister/1.webp"
+      ],
+      "price": 14.99,
+      "stock": 89,
+      "thumbnail": "https://cdn.dummyjson.com/product-images/beauty/powder-canister/thumbnail.webp",
+      "title": "Powder Canister"
+    }
+
+    expect( async ()=> await service.create(productToCreate) ).rejects.toThrow(InternalServerErrorException)
+
+    const products = await service.findAll()
+    expect(products).toHaveLength(3)
+
+    spy.mockRestore();
+  })
 });

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException  } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { readFile, writeFile } from 'fs/promises'
@@ -25,28 +25,53 @@ export class ProductsService {
 
     productsJSON.push(newProduct)
 
-    await writeFile(filePath, JSON.stringify(productsJSON))
+    try{
+      await writeFile(filePath, JSON.stringify(productsJSON))
+    }
+    catch(error)
+    {
+      console.error('Failed to create new Product',error)
+      throw new InternalServerErrorException('Failed to create new Product')
+    }
 
     return {id: newId, message: "Product created"}
   }
 
   async findAll() {
     const filePath = join(__dirname, this.configService.get<string>('DATA_FILE') || '')
-    const productsRaw: Buffer = await readFile(filePath)
-    const productsJSON:Product[]  = JSON.parse(productsRaw.toString())
 
-    return productsJSON
+    try{
+      const productsRaw: Buffer = await readFile(filePath)
+      const productsJSON:Product[]  = JSON.parse(productsRaw.toString())
+
+      return productsJSON
+    }
+    catch(error)
+    {
+      console.error('Failed to execute product search',error)
+      throw new InternalServerErrorException('Failed to execute product search')
+    }    
   }
 
    async findOne(id: number) {
-    const productsJSON:Product[]  = await this.findAll()
 
-    const product = productsJSON.find( 
-      (product)=>{
-        return (product.id === id)
-      }
-    )
+    let product : Product | undefined
 
+    try{
+      const productsJSON:Product[]  = await this.findAll()
+
+      product = productsJSON.find( 
+        (product)=>{
+          return (product.id === id)
+        }
+      )
+    }
+    catch(error)
+    {
+      console.error('Failed to execute product search',error)
+      throw new InternalServerErrorException('Failed to execute product search')
+    }
+    
     if(product)
     {
       return product
@@ -54,38 +79,73 @@ export class ProductsService {
     else{
       throw new NotFoundException(`Product with id ${id} not found`)
     }
+
   }
 
   async update(id: number, updateProductDto: UpdateProductDto) {  
-    const productsJSON = await this.findAll()
-    const product = productsJSON.find( 
-      (product)=>{
-        return (product.id === id)
-      }
-    )
+    let product: Product | undefined
+    let productsJSON: Product[] 
 
+    try{
+      productsJSON = await this.findAll()
+      
+      product = productsJSON.find( 
+        (product)=>{
+          return (product.id === id)
+        }
+      )
+    }
+    catch(error)
+    {
+      console.error('Failed to update product',error)
+      throw new InternalServerErrorException('Failed to update product')
+    }
+  
     if(product)
     {
-      Object.assign(product, updateProductDto)
-      const filePath = join(__dirname, this.configService.get<string>('DATA_FILE') || '')
-      await writeFile(filePath, JSON.stringify(productsJSON))
+      try{
+        Object.assign(product, updateProductDto)
+        const filePath = join(__dirname, this.configService.get<string>('DATA_FILE') || '')
+        await writeFile(filePath, JSON.stringify(productsJSON))
+      }
+      catch(error)
+      {
+        console.error('Failed to update product',error)
+        throw new InternalServerErrorException('Failed to update product')
+      }
     }
     else{
       throw new NotFoundException(`Product with id ${id} not found`)
     }
-
+  
     return {id, message: `Product ${id} updated`}
   }
 
   async remove(id: number) {
-    const productsJSON = await this.findAll()
+    let productsJSON: Product[]
+
+    try{
+      productsJSON = await this.findAll()
+    }
+    catch(error)
+    {
+      console.error('Failed to remove product',error)
+      throw new InternalServerErrorException('Failed to remove product')
+    }
 
     const idx = productsJSON.findIndex(p => p.id === id);
+
     if (idx !== -1) {
       productsJSON.splice(idx, 1);
       //remove object from array
       const filePath = join(__dirname, this.configService.get<string>('DATA_FILE') || '')
-      await writeFile(filePath, JSON.stringify(productsJSON))
+
+      try{
+        await writeFile(filePath, JSON.stringify(productsJSON))
+      }catch(error){
+        console.error('Failed to remove product',error)
+        throw new InternalServerErrorException('Failed to remove product')
+      }
     }
     else{
       throw new NotFoundException(`Product with id ${id} not found`)
