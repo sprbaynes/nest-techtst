@@ -10,6 +10,7 @@ describe('ProductsService', () => {
   let service: ProductsService;
 
   beforeEach(async () => {
+    jest.resetModules()
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot({
         isGlobal: true, // makes it accessible anywhere without re-importing
@@ -62,7 +63,7 @@ describe('ProductsService', () => {
   });
 
   it('should should throw NotFoundException when product id doesn\'t exist', async () => {
-    expect(async ()=> await service.findOne(1111)).rejects.toThrow(new NotFoundException(`Product with id 1111 not found`))
+    await expect(service.findOne(1111)).rejects.toThrow(new NotFoundException(`Product with id 1111 not found`))
   });
 
   it('should remove a product', async () => {
@@ -81,11 +82,11 @@ describe('ProductsService', () => {
 
     const result = await service.remove(productResponse.id);
     expect(result.message).toEqual(`Product ${productResponse.id} deleted`);
-    expect(()=> service.findOne(productResponse.id)).rejects.toThrow(new NotFoundException(`Product with id ${productResponse.id} not found`))
+    await expect(service.findOne(productResponse.id)).rejects.toThrow(new NotFoundException(`Product with id ${productResponse.id} not found`))
   });
 
   it('should throw NotFoundException when you try to remove a product that doesn\'t exist', async () => {
-    expect(async ()=> await service.remove(1111)).rejects.toThrow(new NotFoundException(`Product with id 1111 not found`))
+    await expect(service.remove(1111)).rejects.toThrow(new NotFoundException(`Product with id 1111 not found`))
   });
 
   it('should create a new product', async ()=>{
@@ -135,7 +136,7 @@ describe('ProductsService', () => {
       "title": "Powder Canister"
     }
 
-    expect( async ()=> await service.create(productToCreate) ).rejects.toThrow(InternalServerErrorException)
+    await expect(service.create(productToCreate) ).rejects.toThrow(InternalServerErrorException)
 
     const products = await service.findAll()
     expect(products).toHaveLength(3)
@@ -144,19 +145,17 @@ describe('ProductsService', () => {
   })
 
   it('should update an existing product', async ()=>{
-    let found = await service.findOne(2);
-    
     await service.update(2, {
       "brand": "Updated brand"
     })
     
-    found = await service.findOne(2)
+    const found = await service.findOne(2)
 
     expect(found.brand).toEqual("Updated brand")
 
   })
 
   it('should throw NotFoundException when you try to update a product that doesn\'t exist', async () => {
-    expect(async ()=> await service.update(1111, {"brand": "Updated brand"})).rejects.toThrow(new NotFoundException(`Product with id 1111 not found`))
+    await expect(service.update(1111, {"brand": "Updated brand"})).rejects.toThrow(new NotFoundException(`Product with id 1111 not found`))
   });
 });
