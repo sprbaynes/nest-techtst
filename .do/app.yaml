@@ -1,0 +1,21 @@
+name: nest-techtst
+region: ams3
+services:
+  - name: web
+    image:
+      registry_type: DOCR
+      registry: sprbaynes-registry
+      repository: nest-techtst
+      tag: latest
+      deploy_on_push:
+        enabled: true
+    run_command: "node dist/main"
+    environment_slug: node-js
+    envs:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "80"              # <— added PORT environment variable
+    http_port: 80
+    routes:
+      - path: /
