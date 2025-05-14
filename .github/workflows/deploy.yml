@@ -18,7 +18,7 @@ jobs:
           token: ${{ secrets.DO_API_TOKEN }}
 
       - name: Build container image
-        run: docker build -t nest-techtst:latest
+        run: docker build -t nest-techtst:latest .
 
       - name: Tag container image
         run: docker tag nest-techtst registry.digitalocean.com/sprbaynes-registry/nest-techtst:latest  
