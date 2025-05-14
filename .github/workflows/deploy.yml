@@ -29,16 +29,5 @@ jobs:
       - name: Push image to DigitalOcean Container Registry
         run: docker push registry.digitalocean.com/sprbaynes-registry/nest-techtst:latest
 
-  deploy:
-    name: Update nestjs-app on DO App Platform
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Authenticate doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DO_API_TOKEN }}
-
       - name: Deploy nestjs-app
-        run: |
-          doctl apps update ${{ secrets.DO_APP_ID }} --spec .do/app.yaml
+        run: doctl apps update ${{ secrets.DO_APP_ID }} --spec .do/app.yaml
